@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void probe_dangling(void);
+void probe_double_free(void);
+
 int main(void)
 {
     
@@ -28,6 +31,8 @@ int main(void)
     printf("Новое значение переменной: %d \n", a);
     
     printf("Размер int: %zu байт| Размер указателя:  %zu байт \n", sizeof(int), sizeof(p));
+    //probe_dangling();
+    probe_double_free();
     
     return 0;
     
@@ -48,4 +53,52 @@ int main(void)
 }
 
 
+void probe_dangling(void)
+{
+    int *p = malloc(sizeof(int));
+    
+    if(p == NULL)
+    {
+        printf("Ошибка! malloc() вернул NULL\n");
+        return;
+    }
+    
+    *p = 777;
+    
+    int *alias = p;
+    printf("Значение p = %d\n", *alias);
+    
+    free(p);
+    
+    p = NULL;
+    printf("Число: %d\n", *alias); // heap-use-after-free
+}
 
+void probe_double_free(void)
+{
+    int *a = malloc(sizeof(int));
+    if(a == NULL)
+    {
+        printf("Ошибка! malloc() вернул NULL\n");
+        return;
+    }
+    
+    *a = 500;
+    
+    free(a);
+    a = NULL;
+    free(a); // undefined behavior,ERROR: AddressSanitizer: attempting double-free
+}
+
+void probe_leak(void)
+{
+    int *array = malloc(10 * sizeof(int));;
+    
+    for (int i = 0; i < 10 ; ++i)
+    {
+        array[i] = i + 1;
+        printf("%d", array[i]);
+    }
+    array = NULL;
+    
+}
